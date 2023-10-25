@@ -1,162 +1,123 @@
-const contentDiv = document.getElementById('content');
-const toddlersBtn = document.getElementById('toddlersBtn');
-const tasksBtn = document.getElementById('tasksBtn');
-const schedulesBtn = document.getElementById('schedulesBtn');
-const notificationsBtn = document.getElementById('notificationsBtn');
+const TODDLER_DATA_URL = 'http://localhost:3000/toddlers';
+const SCHEDULE_DATA_URL = 'http://localhost:3000/schedules';
 
-// Function to fetch toddler profiles
-function fetchToddlerProfiles() {
-  const url = 'https://run.mocky.io/v3/7d1b86e8-1cd1-4534-a755-49743958addb';
+let toddlerData = [];
+let scheduleData = [];
+let tasks = [];
 
-  return fetch(url)
-    .then((response) => {
-      if (!response.ok) {
-        throw new Error('Network response was not ok');
-      }
-      return response.json(); // Parse the response as JSON
-    })
-    .then((data) => {
-      return data; // Return the parsed JSON data
-    })
-    .catch((error) => {
-      throw error; // Rethrow the error to handle it in the calling code
+async function fetchToddlerData() {
+    try {
+        const response = await fetch(TODDLER_DATA_URL);
+        toddlerData = await response.json();
+    } catch (error) {
+        console.error('Error fetching toddler data', error);
+    }
+}
+
+async function fetchScheduleData() {
+    try {
+        const response = await fetch(SCHEDULE_DATA_URL);
+        scheduleData = await response.json();
+    } catch (error) {
+        console.error('Error fetching schedule data', error);
+    }
+}
+
+document.getElementById('schedules-button').addEventListener('click', () => {
+    window.location.href = 'schedules.html';
+});
+
+function displayToddlerData(data) {
+  const toddlerDataElement = document.querySelector('.toddler-data');
+  toddlerDataElement.innerHTML = ''; 
+
+  data.forEach((toddler) => {
+    const toddlerDiv = document.createElement('div');
+    toddlerDiv.classList.add('toddler-card');
+    toddlerDiv.innerHTML = `
+      <h2>${toddler.name}</h2>
+      <p>Age: ${toddler.age} years</p>
+      <p>Favorite Toy: ${toddler.favoriteToy}</p>
+    `;
+    toddlerDataElement.appendChild(toddlerDiv);
+  });
+}
+
+function displayScheduleData(data) {
+  const scheduleDataElement = document.querySelector('.schedule-data');
+  scheduleDataElement.innerHTML = ''; 
+
+  data.forEach((schedule) => {
+    const scheduleDiv = document.createElement('div');
+    scheduleDiv.classList.add('schedule-item');
+    scheduleDiv.innerHTML = `
+      <h2>${schedule.title}</h2>
+      <p>Date: ${schedule.date}</p>
+      <p>Time: ${schedule.time}</p>
+      <p>Location: ${schedule.location}</p>
+    `;
+    scheduleDataElement.appendChild(scheduleDiv);
+  });
+}
+
+
+function addTask(description) {
+    const newTask = { description, completed: false };
+    tasks.push(newTask);
+    displayTasks();
+}
+
+function completeTask(taskIndex) {
+    tasks[taskIndex].completed = true;
+    displayTasks();
+}
+
+function scheduleNotifications() {
+    tasks.forEach((task, index) => {
+        setTimeout(() => displayNotification(task.description), 5000 * (index + 1));
     });
 }
 
-// Function to display toddler profiles
-function displayToddlerProfiles() {
-  contentDiv.innerHTML = '<h2>Toddler Profiles</h2>';
-  const toddlerList = document.createElement('ul');
-  toddlerList.id = 'toddlerList';
+function displayNotification(message) {
+    const notificationArea = document.querySelector('.notification-system');
+    const notificationMessage = document.createElement('div');
+    notificationMessage.classList.add('notification-message');
+    notificationMessage.innerText = `Reminder: ${message}`;
+    notificationArea.appendChild(notificationMessage);
+}
 
-  // Fetch toddler profiles and add them to the toddler list
-  fetchToddlerProfiles()
-    .then((data) => {
-      data.forEach((profile) => {
-        const toddlerItem = document.createElement('li');
-        toddlerItem.textContent = `Name: ${profile.name}, Age: ${profile.age}`;
-        toddlerList.appendChild(toddlerItem);
-      });
-    })
-    .catch((error) => {
-      console.error('Error fetching toddler profiles:', error);
+document.addEventListener('DOMContentLoaded', () => {
+
+    document.getElementById('toddler-profile-button').addEventListener('click', () => {
+        fetchToddlerData();
     });
 
-  contentDiv.appendChild(toddlerList);
-}
+    document.getElementById('schedules-button').addEventListener('click', () => {
+        fetchScheduleData();
+    });
 
-// Function to display the Task Manager
-function displayTaskManager() {
-  contentDiv.innerHTML = '<h2>Task Manager</h2';
-  const taskList = document.createElement('ul');
-  taskList.id = 'taskList';
+    document.getElementById('add-task-button').addEventListener('click', () => {
+        const taskDescription = prompt('Enter a new task:');
+        if (taskDescription) {
+            addTask(taskDescription);
+        }
+    });
 
-  const taskInput = document.createElement('input');
-  taskInput.type = 'text';
-  taskInput.placeholder = 'Enter a new task';
-  taskInput.addEventListener('keydown', (event) => {
-    if (event.key === 'Enter') {
-      addTask(taskInput.value);
-      taskInput.value = '';
-    }
-  });
+    document.getElementById('complete-task-button').addEventListener('click', () => {
+        const taskIndex = parseInt(prompt('Enter the index of the task to complete:'));
+        if (!isNaN(taskIndex) && taskIndex >= 0 && taskIndex < tasks.length) {
+            completeTask(taskIndex);
+        } else {
+            alert('Invalid task index.');
+        }
+    });
 
-  contentDiv.appendChild(taskInput);
-  contentDiv.appendChild(taskList);
+    document.getElementById('toddler-profile-button').addEventListener('click', () => {
+        window.location.href = 'toddler-profile.html';
+    });
 
-  // Fetch tasks from a data source and add them to the task list
-  fetchTasks();
-}
+    document.getElementById('schedules-button').addEventListener('click', () => {
+        window.location.href = 'schedules.html';
+    });
 
-// Function to add a new task
-function addTask(taskText) {
-  const taskList = document.getElementById('taskList');
-  const taskItem = document.createElement('li');
-  taskItem.innerHTML = `<input type="checkbox">${taskText}`;
-  taskList.appendChild(taskItem);
-}
-
-// Function to fetch and display tasks (mock data)
-function fetchTasks() {
-  // Replace this with actual data fetching logic from your data source
-  const tasks = ['Buy groceries', 'Walk the dog', 'Prepare dinner'];
-
-  const taskList = document.getElementById('taskList');
-  tasks.forEach((taskText) => {
-    const taskItem = document.createElement('li');
-    taskItem.innerHTML = `<input type="checkbox">${taskText}`;
-    taskList.appendChild(taskItem);
-  });
-}
-
-// Function to display the Schedule Manager
-function displayScheduleManager() {
-  contentDiv.innerHTML = '<h2>Schedule Manager</h2>';
-  const scheduleList = document.createElement('ul');
-  scheduleList.id = 'scheduleList';
-
-  const scheduleInput = document.createElement('input');
-  scheduleInput.type = 'text';
-  scheduleInput.placeholder = 'Add a new schedule';
-
-  const addScheduleBtn = document.createElement('button');
-  addScheduleBtn.textContent = 'Add Schedule';
-  addScheduleBtn.addEventListener('click', () => {
-    const scheduleText = scheduleInput.value.trim();
-    if (scheduleText) {
-      addSchedule(scheduleText);
-      scheduleInput.value = '';
-    }
-  });
-
-  contentDiv.appendChild(scheduleInput);
-  contentDiv.appendChild(addScheduleBtn);
-  contentDiv.appendChild(scheduleList);
-}
-
-// Function to add a new schedule
-function addSchedule(scheduleText) {
-  const scheduleList = document.getElementById('scheduleList');
-  const scheduleItem = document.createElement('li');
-  scheduleItem.textContent = scheduleText;
-  scheduleList.appendChild(scheduleItem);
-}
-
-// Function to display Notifications
-function displayNotifications() {
-  contentDiv.innerHTML = '<h2>Notifications</h2>';
-  const notificationList = document.createElement('ul');
-  notificationList.id = 'notificationList';
-
-  const notificationInput = document.createElement('input');
-  notificationInput.type = 'text';
-  notificationInput.placeholder = 'Send a notification';
-
-  const sendNotificationBtn = document.createElement('button');
-  sendNotificationBtn.textContent = 'Send Notification';
-  sendNotificationBtn.addEventListener('click', () => {
-    const notificationText = notificationInput.value.trim();
-    if (notificationText) {
-      sendNotification(notificationText);
-      notificationInput.value = '';
-    }
-  });
-
-  contentDiv.appendChild(notificationInput);
-  contentDiv.appendChild(sendNotificationBtn);
-  contentDiv.appendChild(notificationList);
-}
-
-// Function to send a notification
-function sendNotification(notificationText) {
-  const notificationList = document.getElementById('notificationList');
-  const notificationItem = document.createElement('li');
-  notificationItem.textContent = notificationText;
-  notificationList.appendChild(notificationItem);
-}
-
-// Attach event listeners to the buttons
-toddlersBtn.addEventListener('click', displayToddlerProfiles);
-tasksBtn.addEventListener('click', displayTaskManager);
-schedulesBtn.addEventListener('click', displayScheduleManager);
-notificationsBtn.addEventListener('click', displayNotifications);
+});
